@@ -20,7 +20,7 @@ export default function PostDetailPage() {
         `https://8qlf7pwyea.microcms.io/api/v1/posts/${id}`,
         {
           headers: {
-            "X-MICROCMS-API-KEY": "MyMK8JXsIC5eR8sThzqG041eCoFcE18k0KSz",
+            "X-MICROCMS-API-KEY": process.env.NEXT_PUBLIC_MICROCMS_API_KEY!,
           },
         }
       );
