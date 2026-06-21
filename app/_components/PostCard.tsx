@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import type { Post } from "../_types/post";
+import type { MicroCmsPost } from "../_types/MicroCmsPost";
 import { formatDate } from "../_utils/formatDate";
 
 type Props = {
-  post: Post;
+  post: MicroCmsPost;
 };
 
 export const PostCard = ({ post }: Props) => {
@@ -16,10 +16,10 @@ export const PostCard = ({ post }: Props) => {
       className="block bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition"
     >
       <Image
-        src={post.thumbnailUrl}
+        src={post.thumbnail.url}
         alt={post.title}
-        width={800}
-        height={400}
+        width={post.thumbnail.width}
+        height={post.thumbnail.height}
         className="w-full h-48 object-cover bg-gray-100"
       />
       <div className="p-5">
@@ -32,10 +32,10 @@ export const PostCard = ({ post }: Props) => {
         <div className="flex flex-wrap gap-2">
           {post.categories.map((c) => (
             <span
-              key={c}
+              key={c.id}
               className="text-xs px-2 py-0.5 rounded border border-blue-300 text-blue-700 bg-blue-50"
             >
-              {c}
+              {c.name}
             </span>
           ))}
         </div>

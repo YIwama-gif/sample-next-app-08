@@ -4,23 +4,28 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useParams } from "next/navigation";
-import type { Post } from "../../_types/post";
+import type { MicroCmsPost } from "../../_types/MicroCmsPost";
 import { formatDate } from "../../_utils/formatDate";
 
 export default function PostDetailPage() {
   const params = useParams<{ id: string }>();
   const id = params?.id;
-  const [post, setPost] = useState<Post | null>(null);
+  const [post, setPost] = useState<MicroCmsPost | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
     if (!id) return;
     const fetcher = async () => {
       const res = await fetch(
-        `https://1hmfpsvto6.execute-api.ap-northeast-1.amazonaws.com/dev/posts/${id}`
+        `https://8qlf7pwyea.microcms.io/api/v1/posts/${id}`,
+        {
+          headers: {
+            "X-MICROCMS-API-KEY": "MyMK8JXsIC5eR8sThzqG041eCoFcE18k0KSz",
+          },
+        }
       );
-      const data: { post: Post } = await res.json();
-      setPost(data.post);
+      const data: MicroCmsPost = await res.json();
+      setPost(data);
       setIsLoading(false);
     };
 
@@ -45,10 +50,10 @@ export default function PostDetailPage() {
   return (
     <article className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
       <Image
-        src={post.thumbnailUrl}
+        src={post.thumbnail.url}
         alt={post.title}
-        width={800}
-        height={400}
+        width={post.thumbnail.width}
+        height={post.thumbnail.height}
         className="w-full h-64 object-cover bg-gray-100"
       />
       <div className="p-6 md:p-8">
@@ -58,10 +63,10 @@ export default function PostDetailPage() {
         <div className="flex flex-wrap gap-2 mb-4">
           {post.categories.map((c) => (
             <span
-              key={c}
+              key={c.id}
               className="text-xs px-2 py-0.5 rounded border border-blue-300 text-blue-700 bg-blue-50"
             >
-              {c}
+              {c.name}
             </span>
           ))}
         </div>
