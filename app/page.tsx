@@ -2,20 +2,25 @@
 
 import { useEffect, useState } from "react";
 import { PostCard } from "./_components/PostCard";
-import type { Post } from "./_types/post";
+import type { MicroCmsPost } from "./_types/MicroCmsPost";
 
 export default function Home() {
-  const [posts, setPosts] = useState<Post[]>([]);
+  const [posts, setPosts] = useState<MicroCmsPost[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // APIでpostsを取得する処理をuseEffectで実行します。
+
   useEffect(() => {
     const fetcher = async () => {
       const res = await fetch(
-        "https://1hmfpsvto6.execute-api.ap-northeast-1.amazonaws.com/dev/posts"
+        "https://8qlf7pwyea.microcms.io/api/v1/posts",
+        {
+          headers: {
+            "X-MICROCMS-API-KEY": process.env.NEXT_PUBLIC_MICROCMS_API_KEY!,
+          },
+        }
       );
-      const data: { posts: Post[] } = await res.json();
-      setPosts(data.posts);
+      const { contents } = await res.json();
+      setPosts(contents);
       setIsLoading(false);
     };
 
