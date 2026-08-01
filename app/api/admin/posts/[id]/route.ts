@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/app/_libs/prisma";
+import type { Post } from "@/app/_types/Post";
 
 export const GET = async (
   request: NextRequest,
@@ -26,7 +27,19 @@ export const GET = async (
       },
     });
 
-    return NextResponse.json({ status: "OK", post: post }, { status: 200 });
+    return NextResponse.json<{ status: string; post: Post | null }>(
+      {
+        status: "OK",
+        post: post
+          ? {
+              ...post,
+              createdAt: post.createdAt.toISOString(),
+              updatedAt: post.updatedAt.toISOString(),
+            }
+          : null,
+      },
+      { status: 200 }
+    );
   } catch (error) {
     if (error instanceof Error)
       return NextResponse.json({ status: error.message }, { status: 400 });
@@ -50,17 +63,6 @@ export const PUT = async (
     await request.json();
 
   try {
-    const post = await prisma.post.update({
-      where: {
-        id: parseInt(id),
-      },
-      data: {
-        title,
-        content,
-        thumbnailUrl,
-      },
-    });
-
     await prisma.postCategory.deleteMany({
       where: {
         postId: parseInt(id),
@@ -71,12 +73,45 @@ export const PUT = async (
       await prisma.postCategory.create({
         data: {
           categoryId: category.id,
-          postId: post.id,
+          postId: parseInt(id),
         },
       });
     }
 
-    return NextResponse.json({ status: "OK", post: post }, { status: 200 });
+    const post = await prisma.post.update({
+      where: {
+        id: parseInt(id),
+      },
+      data: {
+        title,
+        content,
+        thumbnailUrl,
+      },
+      include: {
+        postCategories: {
+          include: {
+            category: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return NextResponse.json<{ status: string; post: Post }>(
+      {
+        status: "OK",
+        post: {
+          ...post,
+          createdAt: post.createdAt.toISOString(),
+          updatedAt: post.updatedAt.toISOString(),
+        },
+      },
+      { status: 200 }
+    );
   } catch (error) {
     if (error instanceof Error)
       return NextResponse.json({ status: error.message }, { status: 400 });
@@ -102,7 +137,10 @@ export const DELETE = async (
       },
     });
 
-    return NextResponse.json({ status: "OK" }, { status: 200 });
+    return NextResponse.json<{ status: string }>(
+      { status: "OK" },
+      { status: 200 }
+    );
   } catch (error) {
     if (error instanceof Error)
       return NextResponse.json({ status: error.message }, { status: 400 });

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/app/_libs/prisma";
+import type { Post } from "@/app/_types/Post";
 
 export const GET = async () => {
   try {
@@ -21,7 +22,17 @@ export const GET = async () => {
       },
     });
 
-    return NextResponse.json({ status: "OK", posts: posts }, { status: 200 });
+    return NextResponse.json<{ status: string; posts: Post[] }>(
+      {
+        status: "OK",
+        posts: posts.map((post) => ({
+          ...post,
+          createdAt: post.createdAt.toISOString(),
+          updatedAt: post.updatedAt.toISOString(),
+        })),
+      },
+      { status: 200 }
+    );
   } catch (error) {
     if (error instanceof Error)
       return NextResponse.json({ status: error.message }, { status: 400 });
@@ -59,7 +70,7 @@ export const POST = async (request: NextRequest) => {
       });
     }
 
-    return NextResponse.json({
+    return NextResponse.json<{ status: string; message: string; id: number }>({
       status: "OK",
       message: "作成しました",
       id: data.id,

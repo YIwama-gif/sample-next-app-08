@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/app/_libs/prisma";
+import type { Category } from "@/app/_types/Category";
 
 export const GET = async (
   request: NextRequest,
@@ -14,7 +15,7 @@ export const GET = async (
       },
     });
 
-    return NextResponse.json(
+    return NextResponse.json<{ status: string; category: Category | null }>(
       { status: "OK", category: category },
       { status: 200 }
     );
@@ -46,7 +47,7 @@ export const PUT = async (
       },
     });
 
-    return NextResponse.json(
+    return NextResponse.json<{ status: string; category: Category }>(
       { status: "OK", category: category },
       { status: 200 }
     );
@@ -75,7 +76,10 @@ export const DELETE = async (
       },
     });
 
-    return NextResponse.json({ status: "OK" }, { status: 200 });
+    return NextResponse.json<{ status: string }>(
+      { status: "OK" },
+      { status: 200 }
+    );
   } catch (error) {
     if (error instanceof Error)
       return NextResponse.json({ status: error.message }, { status: 400 });

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/app/_libs/prisma";
+import type { Category } from "@/app/_types/Category";
 
 export const GET = async () => {
   try {
@@ -9,7 +10,7 @@ export const GET = async () => {
       },
     });
 
-    return NextResponse.json(
+    return NextResponse.json<{ status: string; categories: Category[] }>(
       { status: "OK", categories: categories },
       { status: 200 }
     );
@@ -33,7 +34,7 @@ export const POST = async (request: NextRequest) => {
       },
     });
 
-    return NextResponse.json({
+    return NextResponse.json<{ status: string; message: string; id: number }>({
       status: "OK",
       message: "作成しました",
       id: data.id,
