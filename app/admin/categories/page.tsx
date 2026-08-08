@@ -3,21 +3,29 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { Category } from "../../_types/Category";
+import { useSupabaseSession } from "../../_hooks/useSupabaseSession";
 
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const { token } = useSupabaseSession();
 
   useEffect(() => {
+    if (!token) return;
     const fetcher = async () => {
-      const res = await fetch("/api/admin/categories");
+      const res = await fetch("/api/admin/categories", {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token,
+        },
+      });
       const { categories } = await res.json();
       setCategories(categories);
       setIsLoading(false);
     };
 
     fetcher();
-  }, []);
+  }, [token]);
 
   if (isLoading) {
     return <div className="text-center text-gray-500 py-20">読み込み中...</div>;

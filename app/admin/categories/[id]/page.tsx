@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import type { FormEvent } from "react";
 import type { Category } from "../../../_types/Category";
+import { useSupabaseSession } from "../../../_hooks/useSupabaseSession";
 import { CategoryForm } from "../_components/CategoryForm";
 
 export default function AdminCategoryEditPage() {
@@ -12,26 +13,37 @@ export default function AdminCategoryEditPage() {
   const [name, setName] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const { token } = useSupabaseSession();
 
   useEffect(() => {
     if (!id) return;
+    if (!token) return;
     const fetcher = async () => {
-      const res = await fetch(`/api/admin/categories/${id}`);
+      const res = await fetch(`/api/admin/categories/${id}`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token,
+        },
+      });
       const { category }: { category: Category } = await res.json();
       setName(category.name);
       setIsLoading(false);
     };
 
     fetcher();
-  }, [id]);
+  }, [id, token]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!token) return;
     setIsSubmitting(true);
 
     await fetch(`/api/admin/categories/${id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: token,
+      },
       body: JSON.stringify({ name }),
     });
 
@@ -41,10 +53,15 @@ export default function AdminCategoryEditPage() {
 
   const handleDelete = async () => {
     if (!confirm("カテゴリーを削除しますか？")) return;
+    if (!token) return;
     setIsSubmitting(true);
 
     await fetch(`/api/admin/categories/${id}`, {
       method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: token,
+      },
     });
 
     alert("カテゴリーを削除しました");

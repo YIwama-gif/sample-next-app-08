@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useParams } from "next/navigation";
+import { supabase } from "../../_libs/supabase";
 import type { Post } from "../../_types/Post";
 import { formatDate } from "../../_utils/formatDate";
 
@@ -12,6 +13,9 @@ export default function PostDetailPage() {
   const id = params?.id;
   const [post, setPost] = useState<Post | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [thumbnailImageUrl, setThumbnailImageUrl] = useState<null | string>(
+    null
+  );
 
   useEffect(() => {
     if (!id) return;
@@ -24,6 +28,22 @@ export default function PostDetailPage() {
 
     fetcher();
   }, [id]);
+
+  useEffect(() => {
+    if (!post?.thumbnailImageKey) return
+
+    const fetcher = async () => {
+      const {
+        data: { publicUrl },
+      } = await supabase.storage
+        .from('post_thumbnail')
+        .getPublicUrl(post.thumbnailImageKey)
+
+      setThumbnailImageUrl(publicUrl)
+    }
+
+    fetcher()
+  }, [post?.thumbnailImageKey])
 
   if (isLoading) {
     return <div className="text-center text-gray-500 py-20">読み込み中...</div>;
@@ -42,13 +62,15 @@ export default function PostDetailPage() {
 
   return (
     <article className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-      <Image
-        src={post.thumbnailUrl}
-        alt={post.title}
-        width={800}
-        height={400}
-        className="w-full h-64 object-cover bg-gray-100"
-      />
+      {thumbnailImageUrl && (
+        <Image
+          src={thumbnailImageUrl}
+          alt={post.title}
+          width={800}
+          height={400}
+          className="w-full h-64 object-cover bg-gray-100"
+        />
+      )}
       <div className="p-6 md:p-8">
         <p className="text-sm text-gray-500 mb-2">
           {formatDate(post.createdAt)}
