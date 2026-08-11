@@ -1,42 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import useSWR from "swr";
 import { useParams, useRouter } from "next/navigation";
-import type { FormEvent } from "react";
+import type { SubmitHandler } from "react-hook-form";
 import type { Category } from "../../../_types/Category";
+import { fetcherWithToken } from "../../../_utils/fetcher";
 import { useSupabaseSession } from "../../../_hooks/useSupabaseSession";
 import { CategoryForm } from "../_components/CategoryForm";
+import type { CategoryFormValues } from "../_components/CategoryForm";
 
 export default function AdminCategoryEditPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const [name, setName] = useState<string>("");
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const { token } = useSupabaseSession();
 
-  useEffect(() => {
-    if (!id) return;
-    if (!token) return;
-    const fetcher = async () => {
-      const res = await fetch(`/api/admin/categories/${id}`, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: token,
-        },
-      });
-      const { category }: { category: Category } = await res.json();
-      setName(category.name);
-      setIsLoading(false);
-    };
+  const { data, error, isLoading, mutate } = useSWR<{ category: Category }>(
+    token && id ? [`/api/admin/categories/${id}`, token] : null,
+    ([url, token]: [string, string]) => fetcherWithToken(url, token)
+  );
 
-    fetcher();
-  }, [id, token]);
-
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const handleSubmit: SubmitHandler<CategoryFormValues> = async (formData) => {
     if (!token) return;
-    setIsSubmitting(true);
 
     await fetch(`/api/admin/categories/${id}`, {
       method: "PUT",
@@ -44,9 +28,10 @@ export default function AdminCategoryEditPage() {
         "Content-Type": "application/json",
         Authorization: token,
       },
-      body: JSON.stringify({ name }),
+      body: JSON.stringify({ name: formData.name }),
     });
 
+    mutate();
     alert("カテゴリーを更新しました");
     router.push("/admin/categories");
   };
@@ -54,7 +39,6 @@ export default function AdminCategoryEditPage() {
   const handleDelete = async () => {
     if (!confirm("カテゴリーを削除しますか？")) return;
     if (!token) return;
-    setIsSubmitting(true);
 
     await fetch(`/api/admin/categories/${id}`, {
       method: "DELETE",
@@ -72,15 +56,19 @@ export default function AdminCategoryEditPage() {
     return <div className="text-center text-gray-500 py-20">読み込み中...</div>;
   }
 
+  if (error) {
+    return (
+      <div className="text-center text-red-600 py-20">{error.message}</div>
+    );
+  }
+
   return (
     <div>
       <h1 className="text-2xl font-bold text-gray-900 mb-6">カテゴリー編集</h1>
       <CategoryForm
-        name={name}
-        setName={setName}
+        defaultValues={{ name: data?.category.name ?? "" }}
         onSubmit={handleSubmit}
         onDelete={handleDelete}
-        isSubmitting={isSubmitting}
         submitLabel="更新"
       />
     </div>

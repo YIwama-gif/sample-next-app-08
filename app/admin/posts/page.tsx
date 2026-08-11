@@ -1,35 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import useSWR from "swr";
 import Link from "next/link";
 import type { Post } from "../../_types/Post";
 import { formatDate } from "../../_utils/formatDate";
+import { fetcherWithToken } from "../../_utils/fetcher";
 import { useSupabaseSession } from "../../_hooks/useSupabaseSession";
 
 export default function AdminPostsPage() {
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
   const { token } = useSupabaseSession();
 
-  useEffect(() => {
-    if (!token) return;
-    const fetcher = async () => {
-      const res = await fetch("/api/admin/posts", {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: token,
-        },
-      });
-      const { posts } = await res.json();
-      setPosts(posts);
-      setIsLoading(false);
-    };
-
-    fetcher();
-  }, [token]);
+  const { data, error, isLoading } = useSWR<{ posts: Post[] }>(
+    token ? ["/api/admin/posts", token] : null,
+    ([url, token]: [string, string]) => fetcherWithToken(url, token)
+  );
 
   if (isLoading) {
     return <div className="text-center text-gray-500 py-20">読み込み中...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="text-center text-red-600 py-20">{error.message}</div>
+    );
   }
 
   return (
@@ -44,7 +37,7 @@ export default function AdminPostsPage() {
         </Link>
       </div>
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        {posts.map((post) => (
+        {data?.posts.map((post) => (
           <Link
             key={post.id}
             href={`/admin/posts/${post.id}`}

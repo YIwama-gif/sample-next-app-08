@@ -27,16 +27,20 @@ export const GET = async (
       },
     });
 
-    return NextResponse.json<{ status: string; post: Post | null }>(
+    if (!post)
+      return NextResponse.json(
+        { status: "記事が見つかりませんでした" },
+        { status: 404 }
+      );
+
+    return NextResponse.json<{ status: string; post: Post }>(
       {
         status: "OK",
-        post: post
-          ? {
-              ...post,
-              createdAt: post.createdAt.toISOString(),
-              updatedAt: post.updatedAt.toISOString(),
-            }
-          : null,
+        post: {
+          ...post,
+          createdAt: post.createdAt.toISOString(),
+          updatedAt: post.updatedAt.toISOString(),
+        },
       },
       { status: 200 }
     );

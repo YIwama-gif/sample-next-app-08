@@ -1,27 +1,41 @@
 "use client";
 
-import type { FormEvent } from "react";
+import { useForm, SubmitHandler } from "react-hook-form";
+import { useEffect } from "react";
+
+export type CategoryFormValues = {
+  name: string;
+};
 
 type Props = {
-  name: string;
-  setName: (name: string) => void;
-  onSubmit: (e: FormEvent<HTMLFormElement>) => void;
+  defaultValues?: CategoryFormValues;
+  onSubmit: SubmitHandler<CategoryFormValues>;
   onDelete?: () => void;
-  isSubmitting: boolean;
   submitLabel: string;
 };
 
 export const CategoryForm = ({
-  name,
-  setName,
+  defaultValues,
   onSubmit,
   onDelete,
-  isSubmitting,
   submitLabel,
 }: Props) => {
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<CategoryFormValues>({
+    defaultValues: { name: "" },
+  });
+
+  useEffect(() => {
+    if (defaultValues) reset(defaultValues);
+  }, [defaultValues, reset]);
+
   return (
     <form
-      onSubmit={onSubmit}
+      onSubmit={handleSubmit(onSubmit)}
       className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-5"
     >
       <div>
@@ -34,11 +48,13 @@ export const CategoryForm = ({
         <input
           id="name"
           type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
           disabled={isSubmitting}
           className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-gray-100"
+          {...register("name", { required: "カテゴリー名は必須です" })}
         />
+        {errors.name && (
+          <p className="text-sm text-red-600 mt-1">{errors.name.message}</p>
+        )}
       </div>
 
       <div className="flex items-center gap-3">

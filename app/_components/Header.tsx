@@ -17,7 +17,7 @@ export const Header: React.FC = () => {
   const { session, isLoading } = useSupabaseSession()
 
   return (
-    <header className="bg-gray-800 text-white p-6 font-bold flex justify-between">
+    <header className="bg-gray-800 text-white p-6 font-bold flex justify-between relative z-10">
       <Link href="/" className="header-link">
         Blog
       </Link>
@@ -28,7 +28,9 @@ export const Header: React.FC = () => {
               <Link href="/admin" className="header-link">
                 管理画面
               </Link>
-              <button onClick={handleLogout}>ログアウト</button>
+              <button onClick={handleLogout} className="cursor-pointer">
+                ログアウト
+              </button>
             </>
           ) : (
             <>

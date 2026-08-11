@@ -23,7 +23,13 @@ export const GET = async (
       },
     });
 
-    return NextResponse.json<{ status: string; category: Category | null }>(
+    if (!category)
+      return NextResponse.json(
+        { status: "カテゴリーが見つかりませんでした" },
+        { status: 404 }
+      );
+
+    return NextResponse.json<{ status: string; category: Category }>(
       { status: "OK", category: category },
       { status: 200 }
     );

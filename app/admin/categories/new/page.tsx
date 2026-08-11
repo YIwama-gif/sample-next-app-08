@@ -1,21 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import useSWR from "swr";
 import { useRouter } from "next/navigation";
-import type { FormEvent } from "react";
+import type { SubmitHandler } from "react-hook-form";
+import { fetcherWithToken } from "../../../_utils/fetcher";
 import { useSupabaseSession } from "../../../_hooks/useSupabaseSession";
 import { CategoryForm } from "../_components/CategoryForm";
+import type { CategoryFormValues } from "../_components/CategoryForm";
 
 export default function AdminCategoryNewPage() {
   const router = useRouter();
-  const [name, setName] = useState<string>("");
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const { token } = useSupabaseSession();
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const { mutate } = useSWR(
+    token ? ["/api/admin/categories", token] : null,
+    ([url, token]: [string, string]) => fetcherWithToken(url, token)
+  );
+
+  const handleSubmit: SubmitHandler<CategoryFormValues> = async (data) => {
     if (!token) return;
-    setIsSubmitting(true);
 
     await fetch("/api/admin/categories", {
       method: "POST",
@@ -23,9 +26,10 @@ export default function AdminCategoryNewPage() {
         "Content-Type": "application/json",
         Authorization: token,
       },
-      body: JSON.stringify({ name }),
+      body: JSON.stringify({ name: data.name }),
     });
 
+    mutate();
     alert("カテゴリーを作成しました");
     router.push("/admin/categories");
   };
@@ -33,13 +37,7 @@ export default function AdminCategoryNewPage() {
   return (
     <div>
       <h1 className="text-2xl font-bold text-gray-900 mb-6">カテゴリー作成</h1>
-      <CategoryForm
-        name={name}
-        setName={setName}
-        onSubmit={handleSubmit}
-        isSubmitting={isSubmitting}
-        submitLabel="作成"
-      />
+      <CategoryForm onSubmit={handleSubmit} submitLabel="作成" />
     </div>
   );
 }

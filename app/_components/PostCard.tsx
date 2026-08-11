@@ -17,20 +17,20 @@ export const PostCard = ({ post }: Props) => {
   );
 
   useEffect(() => {
-    if (!post.thumbnailImageKey) return
+    if (!post.thumbnailImageKey) return;
 
-    const fetcher = async () => {
+    const fetchImageUrl = async () => {
       const {
         data: { publicUrl },
       } = await supabase.storage
-        .from('post_thumbnail')
-        .getPublicUrl(post.thumbnailImageKey)
+        .from("post_thumbnail")
+        .getPublicUrl(post.thumbnailImageKey);
 
-      setThumbnailImageUrl(publicUrl)
-    }
+      setThumbnailImageUrl(publicUrl);
+    };
 
-    fetcher()
-  }, [post.thumbnailImageKey])
+    fetchImageUrl();
+  }, [post.thumbnailImageKey]);
 
   return (
     <Link
