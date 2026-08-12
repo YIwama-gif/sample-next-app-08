@@ -1,22 +1,16 @@
 "use client";
 
-import useSWR from "swr";
 import { useRouter } from "next/navigation";
 import type { SubmitHandler } from "react-hook-form";
-import type { Category } from "../../../_types/Category";
-import { fetcherWithToken } from "../../../_utils/fetcher";
 import { useSupabaseSession } from "../../../_hooks/useSupabaseSession";
+import { useAdminCategories } from "../../_hooks/useAdminApi";
 import { PostForm } from "../_components/PostForm";
 import type { PostFormValues } from "../_components/PostForm";
 
 export default function AdminPostNewPage() {
   const router = useRouter();
   const { token } = useSupabaseSession();
-
-  const { data } = useSWR<{ categories: Category[] }>(
-    token ? ["/api/admin/categories", token] : null,
-    ([url, token]: [string, string]) => fetcherWithToken(url, token)
-  );
+  const { categories } = useAdminCategories();
 
   const handleSubmit: SubmitHandler<PostFormValues> = async (formData) => {
     if (!token) return;
@@ -43,7 +37,7 @@ export default function AdminPostNewPage() {
     <div>
       <h1 className="text-2xl font-bold text-gray-900 mb-6">記事作成</h1>
       <PostForm
-        categories={data?.categories ?? []}
+        categories={categories}
         onSubmit={handleSubmit}
         submitLabel="作成"
       />

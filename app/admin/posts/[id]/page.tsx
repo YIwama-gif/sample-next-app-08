@@ -1,12 +1,9 @@
 "use client";
 
-import useSWR from "swr";
 import { useParams, useRouter } from "next/navigation";
 import type { SubmitHandler } from "react-hook-form";
-import type { Post } from "../../../_types/Post";
-import type { Category } from "../../../_types/Category";
-import { fetcherWithToken } from "../../../_utils/fetcher";
 import { useSupabaseSession } from "../../../_hooks/useSupabaseSession";
+import { useAdminPost, useAdminCategories } from "../../_hooks/useAdminApi";
 import { PostForm } from "../_components/PostForm";
 import type { PostFormValues } from "../_components/PostForm";
 
@@ -14,16 +11,8 @@ export default function AdminPostEditPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { token } = useSupabaseSession();
-
-  const { data, error, isLoading, mutate } = useSWR<{ post: Post }>(
-    token && id ? [`/api/admin/posts/${id}`, token] : null,
-    ([url, token]: [string, string]) => fetcherWithToken(url, token)
-  );
-
-  const { data: categoryData } = useSWR<{ categories: Category[] }>(
-    token ? ["/api/admin/categories", token] : null,
-    ([url, token]: [string, string]) => fetcherWithToken(url, token)
-  );
+  const { post, error, isLoading, mutate } = useAdminPost(id);
+  const { categories } = useAdminCategories();
 
   const handleSubmit: SubmitHandler<PostFormValues> = async (formData) => {
     if (!token) return;
@@ -80,18 +69,16 @@ export default function AdminPostEditPage() {
       <h1 className="text-2xl font-bold text-gray-900 mb-6">記事編集</h1>
       <PostForm
         defaultValues={
-          data
+          post
             ? {
-                title: data.post.title,
-                content: data.post.content,
-                thumbnailImageKey: data.post.thumbnailImageKey,
-                categoryIds: data.post.postCategories.map(
-                  (pc) => pc.category.id
-                ),
+                title: post.title,
+                content: post.content,
+                thumbnailImageKey: post.thumbnailImageKey,
+                categoryIds: post.postCategories.map((pc) => pc.category.id),
               }
             : undefined
         }
-        categories={categoryData?.categories ?? []}
+        categories={categories}
         onSubmit={handleSubmit}
         onDelete={handleDelete}
         submitLabel="更新"

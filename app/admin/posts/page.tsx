@@ -1,19 +1,11 @@
 "use client";
 
-import useSWR from "swr";
 import Link from "next/link";
-import type { Post } from "../../_types/Post";
 import { formatDate } from "../../_utils/formatDate";
-import { fetcherWithToken } from "../../_utils/fetcher";
-import { useSupabaseSession } from "../../_hooks/useSupabaseSession";
+import { useAdminPosts } from "../_hooks/useAdminApi";
 
 export default function AdminPostsPage() {
-  const { token } = useSupabaseSession();
-
-  const { data, error, isLoading } = useSWR<{ posts: Post[] }>(
-    token ? ["/api/admin/posts", token] : null,
-    ([url, token]: [string, string]) => fetcherWithToken(url, token)
-  );
+  const { posts, error, isLoading } = useAdminPosts();
 
   if (isLoading) {
     return <div className="text-center text-gray-500 py-20">読み込み中...</div>;
@@ -37,7 +29,7 @@ export default function AdminPostsPage() {
         </Link>
       </div>
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        {data?.posts.map((post) => (
+        {posts.map((post) => (
           <Link
             key={post.id}
             href={`/admin/posts/${post.id}`}

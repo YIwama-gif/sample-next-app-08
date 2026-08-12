@@ -1,21 +1,16 @@
 "use client";
 
-import useSWR from "swr";
 import { useRouter } from "next/navigation";
 import type { SubmitHandler } from "react-hook-form";
-import { fetcherWithToken } from "../../../_utils/fetcher";
 import { useSupabaseSession } from "../../../_hooks/useSupabaseSession";
+import { useAdminCategories } from "../../_hooks/useAdminApi";
 import { CategoryForm } from "../_components/CategoryForm";
 import type { CategoryFormValues } from "../_components/CategoryForm";
 
 export default function AdminCategoryNewPage() {
   const router = useRouter();
   const { token } = useSupabaseSession();
-
-  const { mutate } = useSWR(
-    token ? ["/api/admin/categories", token] : null,
-    ([url, token]: [string, string]) => fetcherWithToken(url, token)
-  );
+  const { mutate } = useAdminCategories();
 
   const handleSubmit: SubmitHandler<CategoryFormValues> = async (data) => {
     if (!token) return;

@@ -1,18 +1,10 @@
 "use client";
 
-import useSWR from "swr";
 import Link from "next/link";
-import type { Category } from "../../_types/Category";
-import { fetcherWithToken } from "../../_utils/fetcher";
-import { useSupabaseSession } from "../../_hooks/useSupabaseSession";
+import { useAdminCategories } from "../_hooks/useAdminApi";
 
 export default function AdminCategoriesPage() {
-  const { token } = useSupabaseSession();
-
-  const { data, error, isLoading } = useSWR<{ categories: Category[] }>(
-    token ? ["/api/admin/categories", token] : null,
-    ([url, token]: [string, string]) => fetcherWithToken(url, token)
-  );
+  const { categories, error, isLoading } = useAdminCategories();
 
   if (isLoading) {
     return <div className="text-center text-gray-500 py-20">読み込み中...</div>;
@@ -36,7 +28,7 @@ export default function AdminCategoriesPage() {
         </Link>
       </div>
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        {data?.categories.map((category) => (
+        {categories.map((category) => (
           <Link
             key={category.id}
             href={`/admin/categories/${category.id}`}

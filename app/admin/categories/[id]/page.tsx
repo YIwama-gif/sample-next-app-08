@@ -1,11 +1,9 @@
 "use client";
 
-import useSWR from "swr";
 import { useParams, useRouter } from "next/navigation";
 import type { SubmitHandler } from "react-hook-form";
-import type { Category } from "../../../_types/Category";
-import { fetcherWithToken } from "../../../_utils/fetcher";
 import { useSupabaseSession } from "../../../_hooks/useSupabaseSession";
+import { useAdminCategory } from "../../_hooks/useAdminApi";
 import { CategoryForm } from "../_components/CategoryForm";
 import type { CategoryFormValues } from "../_components/CategoryForm";
 
@@ -13,11 +11,7 @@ export default function AdminCategoryEditPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { token } = useSupabaseSession();
-
-  const { data, error, isLoading, mutate } = useSWR<{ category: Category }>(
-    token && id ? [`/api/admin/categories/${id}`, token] : null,
-    ([url, token]: [string, string]) => fetcherWithToken(url, token)
-  );
+  const { category, error, isLoading, mutate } = useAdminCategory(id);
 
   const handleSubmit: SubmitHandler<CategoryFormValues> = async (formData) => {
     if (!token) return;
@@ -66,7 +60,7 @@ export default function AdminCategoryEditPage() {
     <div>
       <h1 className="text-2xl font-bold text-gray-900 mb-6">カテゴリー編集</h1>
       <CategoryForm
-        defaultValues={{ name: data?.category.name ?? "" }}
+        defaultValues={{ name: category?.name ?? "" }}
         onSubmit={handleSubmit}
         onDelete={handleDelete}
         submitLabel="更新"
