@@ -5,7 +5,7 @@ import { formatDate } from "../../_utils/formatDate";
 import { useAdminPosts } from "../_hooks/useAdminApi";
 
 export default function AdminPostsPage() {
-  const { posts, error, isLoading } = useAdminPosts();
+  const { data, error, isLoading } = useAdminPosts();
 
   if (isLoading) {
     return <div className="text-center text-gray-500 py-20">読み込み中...</div>;
@@ -29,7 +29,7 @@ export default function AdminPostsPage() {
         </Link>
       </div>
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        {posts.map((post) => (
+        {data?.posts.map((post) => (
           <Link
             key={post.id}
             href={`/admin/posts/${post.id}`}

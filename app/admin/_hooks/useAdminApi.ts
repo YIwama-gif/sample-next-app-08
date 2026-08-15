@@ -15,33 +15,16 @@ const useAdminSWR = <T>(path: string | null) => {
   );
 };
 
-export const useAdminPosts = () => {
-  const { data, error, isLoading, mutate } =
-    useAdminSWR<{ posts: Post[] }>("/api/admin/posts");
+export const useAdminPosts = () =>
+  useAdminSWR<{ posts: Post[] }>("/api/admin/posts");
 
-  return { posts: data?.posts ?? [], error, isLoading, mutate };
-};
+export const useAdminPost = (id: string | undefined) =>
+  useAdminSWR<{ post: Post }>(id ? `/api/admin/posts/${id}` : null);
 
-export const useAdminPost = (id: string | undefined) => {
-  const { data, error, isLoading, mutate } = useAdminSWR<{ post: Post }>(
-    id ? `/api/admin/posts/${id}` : null
+export const useAdminCategories = () =>
+  useAdminSWR<{ categories: Category[] }>("/api/admin/categories");
+
+export const useAdminCategory = (id: string | undefined) =>
+  useAdminSWR<{ category: Category }>(
+    id ? `/api/admin/categories/${id}` : null
   );
-
-  return { post: data?.post, error, isLoading, mutate };
-};
-
-export const useAdminCategories = () => {
-  const { data, error, isLoading, mutate } = useAdminSWR<{
-    categories: Category[];
-  }>("/api/admin/categories");
-
-  return { categories: data?.categories ?? [], error, isLoading, mutate };
-};
-
-export const useAdminCategory = (id: string | undefined) => {
-  const { data, error, isLoading, mutate } = useAdminSWR<{
-    category: Category;
-  }>(id ? `/api/admin/categories/${id}` : null);
-
-  return { category: data?.category, error, isLoading, mutate };
-};

@@ -10,7 +10,7 @@ import type { PostFormValues } from "../_components/PostForm";
 export default function AdminPostNewPage() {
   const router = useRouter();
   const { token } = useSupabaseSession();
-  const { categories } = useAdminCategories();
+  const { data } = useAdminCategories();
 
   const handleSubmit: SubmitHandler<PostFormValues> = async (formData) => {
     if (!token) return;
@@ -37,7 +37,7 @@ export default function AdminPostNewPage() {
     <div>
       <h1 className="text-2xl font-bold text-gray-900 mb-6">記事作成</h1>
       <PostForm
-        categories={categories}
+        categories={data?.categories ?? []}
         onSubmit={handleSubmit}
         submitLabel="作成"
       />

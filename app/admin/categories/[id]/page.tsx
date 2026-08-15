@@ -11,7 +11,7 @@ export default function AdminCategoryEditPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { token } = useSupabaseSession();
-  const { category, error, isLoading, mutate } = useAdminCategory(id);
+  const { data, error, isLoading, mutate } = useAdminCategory(id);
 
   const handleSubmit: SubmitHandler<CategoryFormValues> = async (formData) => {
     if (!token) return;
@@ -60,7 +60,7 @@ export default function AdminCategoryEditPage() {
     <div>
       <h1 className="text-2xl font-bold text-gray-900 mb-6">カテゴリー編集</h1>
       <CategoryForm
-        defaultValues={{ name: category?.name ?? "" }}
+        defaultValues={{ name: data?.category.name ?? "" }}
         onSubmit={handleSubmit}
         onDelete={handleDelete}
         submitLabel="更新"

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useAdminCategories } from "../_hooks/useAdminApi";
 
 export default function AdminCategoriesPage() {
-  const { categories, error, isLoading } = useAdminCategories();
+  const { data, error, isLoading } = useAdminCategories();
 
   if (isLoading) {
     return <div className="text-center text-gray-500 py-20">読み込み中...</div>;
@@ -28,7 +28,7 @@ export default function AdminCategoriesPage() {
         </Link>
       </div>
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        {categories.map((category) => (
+        {data?.categories.map((category) => (
           <Link
             key={category.id}
             href={`/admin/categories/${category.id}`}

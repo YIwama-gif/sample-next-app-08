@@ -11,8 +11,8 @@ export default function AdminPostEditPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { token } = useSupabaseSession();
-  const { post, error, isLoading, mutate } = useAdminPost(id);
-  const { categories } = useAdminCategories();
+  const { data, error, isLoading, mutate } = useAdminPost(id);
+  const { data: categoryData } = useAdminCategories();
 
   const handleSubmit: SubmitHandler<PostFormValues> = async (formData) => {
     if (!token) return;
@@ -69,16 +69,18 @@ export default function AdminPostEditPage() {
       <h1 className="text-2xl font-bold text-gray-900 mb-6">記事編集</h1>
       <PostForm
         defaultValues={
-          post
+          data
             ? {
-                title: post.title,
-                content: post.content,
-                thumbnailImageKey: post.thumbnailImageKey,
-                categoryIds: post.postCategories.map((pc) => pc.category.id),
+                title: data.post.title,
+                content: data.post.content,
+                thumbnailImageKey: data.post.thumbnailImageKey,
+                categoryIds: data.post.postCategories.map(
+                  (pc) => pc.category.id
+                ),
               }
             : undefined
         }
-        categories={categories}
+        categories={categoryData?.categories ?? []}
         onSubmit={handleSubmit}
         onDelete={handleDelete}
         submitLabel="更新"
