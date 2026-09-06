@@ -1,42 +1,105 @@
 "use client";
 
-import type { FormEvent } from "react";
+import { useEffect, useState } from "react";
+import type { ChangeEvent } from "react";
+import { useForm, SubmitHandler } from "react-hook-form";
+import Image from "next/image";
+import { v4 as uuidv4 } from "uuid";
+import { supabase } from "../../../_libs/supabase";
 import type { Category } from "../../../_types/Category";
 
-type Props = {
+export type PostFormValues = {
   title: string;
-  setTitle: (title: string) => void;
   content: string;
-  setContent: (content: string) => void;
-  thumbnailUrl: string;
-  setThumbnailUrl: (thumbnailUrl: string) => void;
+  thumbnailImageKey: string;
+  categoryIds: number[];
+};
+
+type Props = {
+  defaultValues?: PostFormValues;
   categories: Category[];
-  selectedCategoryIds: number[];
-  toggleCategory: (id: number) => void;
-  onSubmit: (e: FormEvent<HTMLFormElement>) => void;
+  onSubmit: SubmitHandler<PostFormValues>;
   onDelete?: () => void;
-  isSubmitting: boolean;
   submitLabel: string;
 };
 
 export const PostForm = ({
-  title,
-  setTitle,
-  content,
-  setContent,
-  thumbnailUrl,
-  setThumbnailUrl,
+  defaultValues,
   categories,
-  selectedCategoryIds,
-  toggleCategory,
   onSubmit,
   onDelete,
-  isSubmitting,
   submitLabel,
 }: Props) => {
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    watch,
+    formState: { errors, isSubmitting },
+  } = useForm<PostFormValues>({
+    defaultValues: {
+      title: "",
+      content: "",
+      thumbnailImageKey: "",
+      categoryIds: [],
+    },
+  });
+
+  const thumbnailImageKey = watch("thumbnailImageKey");
+
+  const [thumbnailImageUrl, setThumbnailImageUrl] = useState<null | string>(
+    null
+  );
+
+  useEffect(() => {
+    if (defaultValues) reset(defaultValues);
+  }, [defaultValues, reset]);
+
+  useEffect(() => {
+    if (!thumbnailImageKey) return;
+
+    const fetchImageUrl = async () => {
+      const {
+        data: { publicUrl },
+      } = await supabase.storage
+        .from("post_thumbnail")
+        .getPublicUrl(thumbnailImageKey);
+
+      setThumbnailImageUrl(publicUrl);
+    };
+
+    fetchImageUrl();
+  }, [thumbnailImageKey]);
+
+  const handleImageChange = async (
+    event: ChangeEvent<HTMLInputElement>
+  ): Promise<void> => {
+    // 画像が選択されていないので終了
+    if (!event.target.files || event.target.files.length === 0) return;
+
+    const file = event.target.files[0];
+    const filePath = `private/${uuidv4()}`;
+
+    const { data, error } = await supabase.storage
+      .from("post_thumbnail")
+      .upload(filePath, file, {
+        cacheControl: "3600",
+        upsert: false,
+      });
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    // data.pathに画像固有のkeyが入っているのでthumbnailImageKeyに格納する
+    setValue("thumbnailImageKey", data.path);
+  };
+
   return (
     <form
-      onSubmit={onSubmit}
+      onSubmit={handleSubmit(onSubmit)}
       className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-5"
     >
       <div>
@@ -49,11 +112,13 @@ export const PostForm = ({
         <input
           id="title"
           type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
           disabled={isSubmitting}
           className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-gray-100"
+          {...register("title", { required: "タイトルは必須です" })}
         />
+        {errors.title && (
+          <p className="text-sm text-red-600 mt-1">{errors.title.message}</p>
+        )}
       </div>
 
       <div>
@@ -66,28 +131,39 @@ export const PostForm = ({
         <textarea
           id="content"
           rows={8}
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
           disabled={isSubmitting}
           className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-gray-100"
+          {...register("content", { required: "内容は必須です" })}
         />
+        {errors.content && (
+          <p className="text-sm text-red-600 mt-1">{errors.content.message}</p>
+        )}
       </div>
 
       <div>
         <label
-          htmlFor="thumbnailUrl"
-          className="block text-sm font-medium text-gray-700 mb-1"
+          htmlFor="thumbnailImageKey"
+          className="block text-sm font-medium text-gray-700"
         >
-          サムネイルURL
+          サムネイル画像
         </label>
         <input
-          id="thumbnailUrl"
-          type="text"
-          value={thumbnailUrl}
-          onChange={(e) => setThumbnailUrl(e.target.value)}
+          type="file"
+          id="thumbnailImageKey"
+          onChange={handleImageChange}
+          accept="image/*"
           disabled={isSubmitting}
-          className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-gray-100"
         />
+        {thumbnailImageUrl && (
+          <div className="mt-2">
+            <Image
+              src={thumbnailImageUrl}
+              alt="thumbnail"
+              width={400}
+              height={400}
+            />
+          </div>
+        )}
       </div>
 
       <div>
@@ -102,9 +178,9 @@ export const PostForm = ({
             >
               <input
                 type="checkbox"
-                checked={selectedCategoryIds.includes(category.id)}
-                onChange={() => toggleCategory(category.id)}
+                value={category.id}
                 disabled={isSubmitting}
+                {...register("categoryIds")}
               />
               {category.name}
             </label>

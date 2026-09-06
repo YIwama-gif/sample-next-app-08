@@ -1,11 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/app/_libs/prisma";
+import { supabase } from "@/app/_libs/supabase";
 import type { Post } from "@/app/_types/Post";
 
 export const GET = async (
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) => {
+  const token = request.headers.get("Authorization") ?? "";
+
+  const { error } = await supabase.auth.getUser(token);
+
+  if (error)
+    return NextResponse.json({ status: error.message }, { status: 400 });
+
   const { id } = await params;
 
   try {
@@ -27,16 +35,20 @@ export const GET = async (
       },
     });
 
-    return NextResponse.json<{ status: string; post: Post | null }>(
+    if (!post)
+      return NextResponse.json(
+        { status: "記事が見つかりませんでした" },
+        { status: 404 }
+      );
+
+    return NextResponse.json<{ status: string; post: Post }>(
       {
         status: "OK",
-        post: post
-          ? {
-              ...post,
-              createdAt: post.createdAt.toISOString(),
-              updatedAt: post.updatedAt.toISOString(),
-            }
-          : null,
+        post: {
+          ...post,
+          createdAt: post.createdAt.toISOString(),
+          updatedAt: post.updatedAt.toISOString(),
+        },
       },
       { status: 200 }
     );
@@ -50,17 +62,28 @@ interface UpdatePostRequestBody {
   title: string;
   content: string;
   categories: { id: number }[];
-  thumbnailUrl: string;
+  thumbnailImageKey: string;
 }
 
 export const PUT = async (
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) => {
+  const token = request.headers.get("Authorization") ?? "";
+
+  const { error } = await supabase.auth.getUser(token);
+
+  if (error)
+    return NextResponse.json({ status: error.message }, { status: 400 });
+
   const { id } = await params;
 
-  const { title, content, categories, thumbnailUrl }: UpdatePostRequestBody =
-    await request.json();
+  const {
+    title,
+    content,
+    categories,
+    thumbnailImageKey,
+  }: UpdatePostRequestBody = await request.json();
 
   try {
     await prisma.postCategory.deleteMany({
@@ -85,7 +108,7 @@ export const PUT = async (
       data: {
         title,
         content,
-        thumbnailUrl,
+        thumbnailImageKey,
       },
       include: {
         postCategories: {
@@ -122,6 +145,13 @@ export const DELETE = async (
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) => {
+  const token = request.headers.get("Authorization") ?? "";
+
+  const { error } = await supabase.auth.getUser(token);
+
+  if (error)
+    return NextResponse.json({ status: error.message }, { status: 400 });
+
   const { id } = await params;
 
   try {

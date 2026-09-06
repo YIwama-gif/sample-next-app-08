@@ -1,31 +1,46 @@
-"use client";
+'use client'
 
-import Link from "next/link";
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { useRouteGuard } from './_hooks/useRouteGuard'
 
 export default function AdminLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: {
+  children: React.ReactNode
+}) {
+  useRouteGuard()
+
+  const pathname = usePathname()
+
+  const isSelected = (href: string) => {
+    return pathname.includes(href)
+  }
+
   return (
-    <div className="flex gap-6">
-      <aside className="w-52 shrink-0 bg-white rounded-lg shadow-sm border border-gray-200 p-4 h-fit">
-        <nav className="space-y-1">
-          <Link
-            href="/admin/posts"
-            className="block px-3 py-2 rounded hover:bg-gray-100"
-          >
-            記事一覧
-          </Link>
-          <Link
-            href="/admin/categories"
-            className="block px-3 py-2 rounded hover:bg-gray-100"
-          >
-            カテゴリー一覧
-          </Link>
-        </nav>
+    <>
+      {/* サイドバー */}
+      <aside className="fixed bg-gray-100 w-70 left-0 bottom-0 top-18">
+        <Link
+          href="/admin/posts"
+          className={`p-4 block hover:bg-blue-100 ${
+            isSelected('/admin/posts') && 'bg-blue-100'
+          }`}
+        >
+          記事一覧
+        </Link>
+        <Link
+          href="/admin/categories"
+          className={`p-4 block hover:bg-blue-100 ${
+            isSelected('/admin/categories') && 'bg-blue-100'
+          }`}
+        >
+          カテゴリー一覧
+        </Link>
       </aside>
-      <div className="flex-1">{children}</div>
-    </div>
-  );
+
+      {/* メインエリア */}
+      <div className="ml-70 p-4">{children}</div>
+    </>
+  )
 }

@@ -1,26 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import type { Category } from "../../_types/Category";
+import { useAdminCategories } from "../_hooks/useAdminApi";
 
 export default function AdminCategoriesPage() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-
-  useEffect(() => {
-    const fetcher = async () => {
-      const res = await fetch("/api/admin/categories");
-      const { categories } = await res.json();
-      setCategories(categories);
-      setIsLoading(false);
-    };
-
-    fetcher();
-  }, []);
+  const { data, error, isLoading } = useAdminCategories();
 
   if (isLoading) {
     return <div className="text-center text-gray-500 py-20">読み込み中...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="text-center text-red-600 py-20">{error.message}</div>
+    );
   }
 
   return (
@@ -35,7 +28,7 @@ export default function AdminCategoriesPage() {
         </Link>
       </div>
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        {categories.map((category) => (
+        {data?.categories.map((category) => (
           <Link
             key={category.id}
             href={`/admin/categories/${category.id}`}

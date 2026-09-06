@@ -1,50 +1,31 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { FormEvent } from "react";
-import type { Category } from "../../../_types/Category";
+import type { SubmitHandler } from "react-hook-form";
+import { useSupabaseSession } from "../../../_hooks/useSupabaseSession";
+import { useAdminCategories } from "../../_hooks/useAdminApi";
 import { PostForm } from "../_components/PostForm";
+import type { PostFormValues } from "../_components/PostForm";
 
 export default function AdminPostNewPage() {
   const router = useRouter();
-  const [title, setTitle] = useState<string>("");
-  const [content, setContent] = useState<string>("");
-  const [thumbnailUrl, setThumbnailUrl] = useState<string>(
-    "https://placehold.jp/800x400.png"
-  );
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const { token } = useSupabaseSession();
+  const { data } = useAdminCategories();
 
-  useEffect(() => {
-    const fetcher = async () => {
-      const res = await fetch("/api/admin/categories");
-      const { categories } = await res.json();
-      setCategories(categories);
-    };
-
-    fetcher();
-  }, []);
-
-  const toggleCategory = (id: number) => {
-    setSelectedCategoryIds((prev) =>
-      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
-    );
-  };
-
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsSubmitting(true);
+  const handleSubmit: SubmitHandler<PostFormValues> = async (formData) => {
+    if (!token) return;
 
     await fetch("/api/admin/posts", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: token,
+      },
       body: JSON.stringify({
-        title,
-        content,
-        thumbnailUrl,
-        categories: selectedCategoryIds.map((id) => ({ id })),
+        title: formData.title,
+        content: formData.content,
+        thumbnailImageKey: formData.thumbnailImageKey,
+        categories: formData.categoryIds.map((id) => ({ id: Number(id) })),
       }),
     });
 
@@ -56,17 +37,8 @@ export default function AdminPostNewPage() {
     <div>
       <h1 className="text-2xl font-bold text-gray-900 mb-6">記事作成</h1>
       <PostForm
-        title={title}
-        setTitle={setTitle}
-        content={content}
-        setContent={setContent}
-        thumbnailUrl={thumbnailUrl}
-        setThumbnailUrl={setThumbnailUrl}
-        categories={categories}
-        selectedCategoryIds={selectedCategoryIds}
-        toggleCategory={toggleCategory}
+        categories={data?.categories ?? []}
         onSubmit={handleSubmit}
-        isSubmitting={isSubmitting}
         submitLabel="作成"
       />
     </div>

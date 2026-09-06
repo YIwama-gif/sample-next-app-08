@@ -1,35 +1,50 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import useSWR from "swr";
 import Link from "next/link";
 import Image from "next/image";
 import { useParams } from "next/navigation";
+import { supabase } from "../../_libs/supabase";
 import type { Post } from "../../_types/Post";
 import { formatDate } from "../../_utils/formatDate";
+import { fetcher } from "../../_utils/fetcher";
 
 export default function PostDetailPage() {
-  const params = useParams<{ id: string }>();
-  const id = params?.id;
-  const [post, setPost] = useState<Post | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const { id } = useParams<{ id: string }>();
+
+  const { data, error, isLoading } = useSWR<{ post: Post }>(
+    id ? `/api/posts/${id}` : null,
+    fetcher
+  );
+
+  const post = data?.post;
+
+  const [thumbnailImageUrl, setThumbnailImageUrl] = useState<null | string>(
+    null
+  );
 
   useEffect(() => {
-    if (!id) return;
-    const fetcher = async () => {
-      const res = await fetch(`/api/posts/${id}`);
-      const { post } = await res.json();
-      setPost(post);
-      setIsLoading(false);
+    if (!post?.thumbnailImageKey) return;
+
+    const fetchImageUrl = async () => {
+      const {
+        data: { publicUrl },
+      } = await supabase.storage
+        .from("post_thumbnail")
+        .getPublicUrl(post.thumbnailImageKey);
+
+      setThumbnailImageUrl(publicUrl);
     };
 
-    fetcher();
-  }, [id]);
+    fetchImageUrl();
+  }, [post?.thumbnailImageKey]);
 
   if (isLoading) {
     return <div className="text-center text-gray-500 py-20">読み込み中...</div>;
   }
 
-  if (!post) {
+  if (error || !post) {
     return (
       <div className="text-center py-20">
         <p className="text-gray-700 mb-4">記事が見つかりませんでした。</p>
@@ -42,13 +57,15 @@ export default function PostDetailPage() {
 
   return (
     <article className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-      <Image
-        src={post.thumbnailUrl}
-        alt={post.title}
-        width={800}
-        height={400}
-        className="w-full h-64 object-cover bg-gray-100"
-      />
+      {thumbnailImageUrl && (
+        <Image
+          src={thumbnailImageUrl}
+          alt={post.title}
+          width={800}
+          height={400}
+          className="w-full h-64 object-cover bg-gray-100"
+        />
+      )}
       <div className="p-6 md:p-8">
         <p className="text-sm text-gray-500 mb-2">
           {formatDate(post.createdAt)}

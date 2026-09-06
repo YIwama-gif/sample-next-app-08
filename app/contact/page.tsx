@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import type { ChangeEvent, FormEvent } from "react";
+import { useForm, SubmitHandler } from "react-hook-form";
 
 const CONTACT_ENDPOINT =
   "https://1hmfpsvto6.execute-api.ap-northeast-1.amazonaws.com/dev/contacts";
@@ -14,79 +13,43 @@ type ContactValues = {
   message: string;
 };
 
-type ContactErrors = Partial<Record<keyof ContactValues, string>>;
-
 const initialValues: ContactValues = { name: "", email: "", message: "" };
 
 export default function ContactPage() {
-  const [values, setValues] = useState<ContactValues>(initialValues);
-  const [errors, setErrors] = useState<ContactErrors>({});
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-
-  // 入力欄の値が変わったらvaluesを更新する
-  const handleChange = (
-    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setValues((prev) => ({ ...prev, [name]: value }));
-  };
-
-  // バリデーション
-  const validate = (v: ContactValues): ContactErrors => {
-    const next: ContactErrors = {};
-    if (!v.name.trim()) next.name = "お名前を入力してください";
-    else if (v.name.length > 30) next.name = "30文字以内で入力してください";
-
-    if (!v.email.trim()) next.email = "メールアドレスを入力してください";
-    else if (!EMAIL_REGEX.test(v.email))
-      next.email = "メールアドレスの形式で入力してください";
-
-    if (!v.message.trim()) next.message = "本文を入力してください";
-    else if (v.message.length > 500)
-      next.message = "500文字以内で入力してください";
-
-    return next;
-  };
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<ContactValues>({ defaultValues: initialValues });
 
   // 送信ボタン押下時の処理
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    const nextErrors = validate(values);
-    setErrors(nextErrors);
-    // エラーがあれば送信しない
-    if (Object.keys(nextErrors).length > 0) return;
-
-    setIsSubmitting(true);
+  const onSubmit: SubmitHandler<ContactValues> = async (data) => {
     try {
       const res = await fetch(CONTACT_ENDPOINT, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: values.name,
-          email: values.email,
-          message: values.message,
+          name: data.name,
+          email: data.email,
+          message: data.message,
         }),
       });
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
       alert("送信しました");
-      setValues(initialValues);
-      setErrors({});
-    } catch (err) {
-      console.error(err);
+      reset(initialValues);
+    } catch (error) {
+      console.error(error);
       alert("送信に失敗しました。時間をおいて再度お試しください。");
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
   // クリアボタン
   const handleClear = () => {
     if (isSubmitting) return;
-    setValues(initialValues);
-    setErrors({});
+    reset(initialValues);
   };
 
   return (
@@ -94,7 +57,7 @@ export default function ContactPage() {
       <h1 className="text-2xl font-bold text-gray-900 mb-6">お問い合わせ</h1>
 
       <form
-        onSubmit={handleSubmit}
+        onSubmit={handleSubmit(onSubmit)}
         noValidate
         className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-5"
       >
@@ -107,15 +70,21 @@ export default function ContactPage() {
           </label>
           <input
             id="name"
-            name="name"
             type="text"
-            value={values.name}
-            onChange={handleChange}
             disabled={isSubmitting}
+            {...register("name", {
+              required: "お名前を入力してください",
+              maxLength: {
+                value: 30,
+                message: "30文字以内で入力してください",
+              },
+              validate: (value) =>
+                value.trim() !== "" || "お名前を入力してください",
+            })}
             className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-gray-100"
           />
           {errors.name && (
-            <p className="text-xs text-red-600 mt-1">{errors.name}</p>
+            <p className="text-xs text-red-600 mt-1">{errors.name.message}</p>
           )}
         </div>
 
@@ -128,15 +97,19 @@ export default function ContactPage() {
           </label>
           <input
             id="email"
-            name="email"
             type="email"
-            value={values.email}
-            onChange={handleChange}
             disabled={isSubmitting}
+            {...register("email", {
+              required: "メールアドレスを入力してください",
+              pattern: {
+                value: EMAIL_REGEX,
+                message: "メールアドレスの形式で入力してください",
+              },
+            })}
             className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-gray-100"
           />
           {errors.email && (
-            <p className="text-xs text-red-600 mt-1">{errors.email}</p>
+            <p className="text-xs text-red-600 mt-1">{errors.email.message}</p>
           )}
         </div>
 
@@ -149,15 +122,21 @@ export default function ContactPage() {
           </label>
           <textarea
             id="message"
-            name="message"
             rows={6}
-            value={values.message}
-            onChange={handleChange}
             disabled={isSubmitting}
+            {...register("message", {
+              required: "本文を入力してください",
+              maxLength: {
+                value: 500,
+                message: "500文字以内で入力してください",
+              },
+              validate: (value) =>
+                value.trim() !== "" || "本文を入力してください",
+            })}
             className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-gray-100"
           />
           {errors.message && (
-            <p className="text-xs text-red-600 mt-1">{errors.message}</p>
+            <p className="text-xs text-red-600 mt-1">{errors.message.message}</p>
           )}
         </div>
 
@@ -165,7 +144,7 @@ export default function ContactPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-semibold px-5 py-2 rounded transition"
+            className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-semibold px-5 py-2 rounded transition cursor-pointer disabled:cursor-not-allowed"
           >
             {isSubmitting ? "送信中..." : "送信"}
           </button>
@@ -173,7 +152,7 @@ export default function ContactPage() {
             type="button"
             onClick={handleClear}
             disabled={isSubmitting}
-            className="border border-gray-300 hover:bg-gray-100 disabled:opacity-50 text-gray-700 font-semibold px-5 py-2 rounded transition"
+            className="border border-gray-300 hover:bg-gray-100 disabled:opacity-50 text-gray-700 font-semibold px-5 py-2 rounded transition cursor-pointer disabled:cursor-not-allowed"
           >
             クリア
           </button>

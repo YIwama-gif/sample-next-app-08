@@ -1,7 +1,9 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { supabase } from "../_libs/supabase";
 import type { Post } from "../_types/Post";
 import { formatDate } from "../_utils/formatDate";
 
@@ -10,18 +12,40 @@ type Props = {
 };
 
 export const PostCard = ({ post }: Props) => {
+  const [thumbnailImageUrl, setThumbnailImageUrl] = useState<null | string>(
+    null
+  );
+
+  useEffect(() => {
+    if (!post.thumbnailImageKey) return;
+
+    const fetchImageUrl = async () => {
+      const {
+        data: { publicUrl },
+      } = await supabase.storage
+        .from("post_thumbnail")
+        .getPublicUrl(post.thumbnailImageKey);
+
+      setThumbnailImageUrl(publicUrl);
+    };
+
+    fetchImageUrl();
+  }, [post.thumbnailImageKey]);
+
   return (
     <Link
       href={`/posts/${post.id}`}
       className="block bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition"
     >
-      <Image
-        src={post.thumbnailUrl}
-        alt={post.title}
-        width={800}
-        height={400}
-        className="w-full h-48 object-cover bg-gray-100"
-      />
+      {thumbnailImageUrl && (
+        <Image
+          src={thumbnailImageUrl}
+          alt={post.title}
+          width={800}
+          height={400}
+          className="w-full h-48 object-cover bg-gray-100"
+        />
+      )}
       <div className="p-5">
         <p className="text-xs text-gray-500 mb-2">
           {formatDate(post.createdAt)}
